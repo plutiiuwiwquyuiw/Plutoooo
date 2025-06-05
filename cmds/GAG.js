@@ -1,95 +1,58 @@
 const axios = require("axios");
 
-const updateIntervals = {
-    weather: 120000, // 2 minutes
-    gear: 300000,    // 5 minutes
-    seeds: 300000,   // 5 minutes
-    egg: 1800000,    // 30 minutes
-    honey: 3600000,  // 1 hour
-    cosmetics: 14400000 // 4 hours
-};
-
-let lastUpdated = {
-    weather: null,
-    gear: null,
-    seeds: null,
-    egg: null,
-    honey: null,
-    cosmetics: null
-};
-
-let updaterIntervals = {};
-
-async function fetchWeather(api) {
-    try {
-        const response = await axios.get(`${api}/api/weather`);
-        const weatherData = response.data;
-        // Process and display weather data
-        console.log(`Weather Update: ${weatherData.icon} ${weatherData.description}`);
-        lastUpdated.weather = weatherData.last_updated;
-    } catch (error) {
-        console.error("Error fetching weather data:", error);
-    }
-}
-
-async function fetchStock(api, type) {
-    try {
-        const response = await axios.get(`${api}/api/stock/${type}`);
-        const stockData = response.data;
-        // Process and display stock data
-        console.log(`${stockData[type + '_stock'].name} Update:`, stockData[type + '_stock'].items);
-        lastUpdated[type] = stockData[type + '_stock'].last_updated;
-    } catch (error) {
-        console.error(`Error fetching ${type} stock data:`, error);
-    }
-}
-
-async function autoUpdater(api) {
-    // Fetch weather data immediately
-    await fetchWeather(api);
-
-    // Set intervals for fetching stock data
-    updaterIntervals.weather = setInterval(() => fetchWeather(api), updateIntervals.weather);
-    updaterIntervals.gear = setInterval(() => fetchStock(api, 'gear'), updateIntervals.gear);
-    updaterIntervals.seeds = setInterval(() => fetchStock(api, 'seeds'), updateIntervals.seeds);
-    updaterIntervals.egg = setInterval(() => fetchStock(api, 'egg'), updateIntervals.egg);
-    updaterIntervals.honey = setInterval(() => fetchStock(api, 'honey'), updateIntervals.honey);
-    updaterIntervals.cosmetics = setInterval(() => fetchStock(api, 'cosmetics'), updateIntervals.cosmetics);
-}
-
-function stopUpdater() {
-    for (const interval in updaterIntervals) {
-        clearInterval(updaterIntervals[interval]);
-    }
-    updaterIntervals = {};
-}
-
 module.exports = {
-    name: "autoUpdater",
-    usePrefix: true,
-    usage: "!startUpdater | !stopUpdater | !refreshData",
+    name: "garden",
+    usePrefix: false,
+    usage: "garden",
     version: "1.0",
     admin: false,
-    cooldown: 2,
+    cooldown: 5,
 
-    execute: async ({ api, event, args }) => {
+    execute: async ({ api, event }) => {
         const { threadID } = event;
-        const command = args[0];
+        const baseUrl = "https://growagardenstock.vercel.app/api";
 
-        if (command === "startUpdater") {
-            autoUpdater("https://growagardenstock.vercel.app"); // Replace with your actual API URL
-            return api.sendMessage("🔄 Auto-updater has been started!", threadID);
-        } else if (command === "stopUpdater") {
-            stopUpdater();
-            return api.sendMessage("⏹️ Auto-updater has been stopped!", threadID);
-        } else if (command === "refreshData") {
-            await fetchWeather("/api/weather"); // Replace with your actual API URL
-            await fetchStock("/api/stock/gear", 'gear');
-            await fetchStock("/api/stock/seeds", 'seeds');
-            // Add other stock types as needed
-            return api.sendMessage("🔄 Data has been manually refreshed!", threadID);
-        } else {
-            return api.sendMessage("⚠️ Invalid command. Use !startUpdater, !stopUpdater, or !refreshData.", threadID);
+        try {
+            // Send initial loading message
+            const loadingMsg = await api.sendMessage("🌱 Fetching updated garden data...", threadID);
+
+            // Step 1: Refresh data
+            await axios.get(`${baseUrl}/refresh`);
+
+            // Step 2: Get updated weather
+            const weatherRes = await axios.get(`${baseUrl}/weather`);
+            const weather = weatherRes.data;
+
+            // Step 3: Get all stock data
+            const stockRes = await axios.get(`${baseUrl}/stock/all`);
+            const stock = stockRes.data;
+
+            // Format weather section
+            let weatherText = `🌤️ WEATHER\n━━━━━━━━━━━━━━\n`;
+            weatherText += `Effect: ${weather.effect}\n`;
+            weatherText += `Bonus: ${weather.bonus}\n`;
+            weatherText += `Mutation: ${weather.mutation}\n`;
+
+            // Format stock section
+            let stockText = `\n🛒 STOCK\n━━━━━━━━━━━━━━\n`;
+            for (const category in stock) {
+                stockText += `\n📦 ${category.toUpperCase()}\n`;
+                const items = stock[category];
+                if (items.length === 0) {
+                    stockText += "No items in stock.\n";
+                } else {
+                    for (const item of items) {
+                        stockText += `• ${item.name} - ${item.price} coins (⏱️ ${item.countdown})\n`;
+                    }
+                }
+            }
+
+            // Send final message
+            return api.sendMessage(`${weatherText}\n${stockText}`, threadID, loadingMsg.messageID);
+
+        } catch (error) {
+            console.error("❌ Garden command error:", error);
+            return api.sendMessage("❌ Failed to fetch garden data. Please try again later.", threadID);
         }
     }
 };
