@@ -18,6 +18,8 @@ let lastUpdated = {
     cosmetics: null
 };
 
+let updaterIntervals = {};
+
 async function fetchWeather(api) {
     try {
         const response = await axios.get(`${api}/api/weather`);
@@ -47,14 +49,47 @@ async function autoUpdater(api) {
     await fetchWeather(api);
 
     // Set intervals for fetching stock data
-    setInterval(() => fetchWeather(api), updateIntervals.weather);
-    setInterval(() => fetchStock(api, 'gear'), updateIntervals.gear);
-    setInterval(() => fetchStock(api, 'seeds'), updateIntervals.seeds);
-    setInterval(() => fetchStock(api, 'egg'), updateIntervals.egg);
-    setInterval(() => fetchStock(api, 'honey'), updateIntervals.honey);
-    setInterval(() => fetchStock(api, 'cosmetics'), updateIntervals.cosmetics);
+    updaterIntervals.weather = setInterval(() => fetchWeather(api), updateIntervals.weather);
+    updaterIntervals.gear = setInterval(() => fetchStock(api, 'gear'), updateIntervals.gear);
+    updaterIntervals.seeds = setInterval(() => fetchStock(api, 'seeds'), updateIntervals.seeds);
+    updaterIntervals.egg = setInterval(() => fetchStock(api, 'egg'), updateIntervals.egg);
+    updaterIntervals.honey = setInterval(() => fetchStock(api, 'honey'), updateIntervals.honey);
+    updaterIntervals.cosmetics = setInterval(() => fetchStock(api, 'cosmetics'), updateIntervals.cosmetics);
 }
 
-// Example usage
-const apiUrl = "https://growagardenstock.vercel.app"; // Replace with your actual API URL
-autoUpdater(apiUrl);
+function stopUpdater() {
+    for (const interval in updaterIntervals) {
+        clearInterval(updaterIntervals[interval]);
+    }
+    updaterIntervals = {};
+}
+
+module.exports = {
+    name: "autoUpdater",
+    usePrefix: true,
+    usage: "!startUpdater | !stopUpdater | !refreshData",
+    version: "1.0",
+    admin: false,
+    cooldown: 2,
+
+    execute: async ({ api, event, args }) => {
+        const { threadID } = event;
+        const command = args[0];
+
+        if (command === "startUpdater") {
+            autoUpdater("https://your-api-url.com"); // Replace with your actual API URL
+            return api.sendMessage("🔄 Auto-updater has been started!", threadID);
+        } else if (command === "stopUpdater") {
+            stopUpdater();
+            return api.sendMessage("⏹️ Auto-updater has been stopped!", threadID);
+        } else if (command === "refreshData") {
+            await fetchWeather("https://your-api-url.com"); // Replace with your actual API URL
+            await fetchStock("https://your-api-url.com", 'gear');
+            await fetchStock("https://your-api-url.com", 'seeds');
+            // Add other stock types as needed
+            return api.sendMessage("🔄 Data has been manually refreshed!", threadID);
+        } else {
+            return api.sendMessage("⚠️ Invalid command. Use !startUpdater, !stopUpdater, or !refreshData.", threadID);
+        }
+    }
+};
