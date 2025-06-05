@@ -4,7 +4,7 @@ module.exports = {
     name: "garden",
     usePrefix: false,
     usage: "garden",
-    version: "1.0",
+    version: "1.1",
     admin: false,
     cooldown: 5,
 
@@ -13,7 +13,7 @@ module.exports = {
         const baseUrl = "https://growagardenstock.vercel.app/api";
 
         try {
-            // Send initial loading message
+            // Send loading message
             const loadingMsg = await api.sendMessage("🌱 Fetching updated garden data...", threadID);
 
             // Step 1: Refresh data
@@ -29,25 +29,33 @@ module.exports = {
 
             // Format weather section
             let weatherText = `🌤️ WEATHER\n━━━━━━━━━━━━━━\n`;
-            weatherText += `Effect: ${weather.effect}\n`;
-            weatherText += `Bonus: ${weather.bonus}\n`;
-            weatherText += `Mutation: ${weather.mutation}\n`;
+            weatherText += `Weather: ${weather.currentWeather} (${weather.weatherType})\n`;
+            weatherText += `Effect: ${weather.effectDescription}\n`;
+            weatherText += `Bonus: ${weather.cropBonuses}\n`;
+            weatherText += `Mutations: ${weather.mutations.length > 0 ? weather.mutations.join(", ") : "None"}\n`;
 
             // Format stock section
             let stockText = `\n🛒 STOCK\n━━━━━━━━━━━━━━\n`;
-            for (const category in stock) {
-                stockText += `\n📦 ${category.toUpperCase()}\n`;
-                const items = stock[category];
+            for (const categoryKey in stock) {
+                const category = stock[categoryKey];
+                stockText += `\n📦 ${category.name}\n`;
+                const items = category.items || [];
                 if (items.length === 0) {
                     stockText += "No items in stock.\n";
                 } else {
                     for (const item of items) {
-                        stockText += `• ${item.name} - ${item.price} coins (⏱️ ${item.countdown})\n`;
+                        stockText += `• ${item.name} - ${item.price || "N/A"} coins\n`;
                     }
+                }
+
+                // Optionally show countdown if exists
+                if (category.countdown && category.countdown.ends_at) {
+                    const endsAt = new Date(category.countdown.ends_at);
+                    stockText += `⏱️ Refreshes at: ${endsAt.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' })}\n`;
                 }
             }
 
-            // Send final message
+            // Send final formatted message replacing loading message
             return api.sendMessage(`${weatherText}\n${stockText}`, threadID, loadingMsg.messageID);
 
         } catch (error) {
