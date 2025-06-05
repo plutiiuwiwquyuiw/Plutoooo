@@ -77,15 +77,15 @@ module.exports = {
         const command = args[0];
 
         if (command === "startUpdater") {
-            autoUpdater("https://your-api-url.com"); // Replace with your actual API URL
+            autoUpdater("https://growagardenstock.vercel.app"); // Replace with your actual API URL
             return api.sendMessage("🔄 Auto-updater has been started!", threadID);
         } else if (command === "stopUpdater") {
             stopUpdater();
             return api.sendMessage("⏹️ Auto-updater has been stopped!", threadID);
         } else if (command === "refreshData") {
-            await fetchWeather("https://your-api-url.com"); // Replace with your actual API URL
-            await fetchStock("https://your-api-url.com", 'gear');
-            await fetchStock("https://your-api-url.com", 'seeds');
+            await fetchWeather("/api/weather"); // Replace with your actual API URL
+            await fetchStock("/api/stock/gear", 'gear');
+            await fetchStock("/api/stock/seeds", 'seeds');
             // Add other stock types as needed
             return api.sendMessage("🔄 Data has been manually refreshed!", threadID);
         } else {
