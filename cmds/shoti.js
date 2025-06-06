@@ -1,38 +1,26 @@
-const fs = require("fs");
-const axios = require("axios");
-const path = require("path");
+🌤️  WEATHER REPORT
+━━━━━━━━━━━━━━━━━━
+📌 Weather: Sunny (Clear Skies)
+🌟 Effect: Boosts growth rate by 25%
+🎁 Bonus: +10% Yield on Harvest
+🧬 Mutations: Fire Bloom, Ice Root
 
-module.exports = {
-    module.exports = {
-    name: "weather",
-    usePrefix: false,
-    usage: "weather",
-    version: "1.0",
-    cooldown: 5,
-    admin: false,
+🛒  STOCK OVERVIEW
+━━━━━━━━━━━━━━━━━━
 
-    execute: async ({ api, event }) => {
-        const BASE_URL = "https://growagardenstock.vercel.app";
+📦 Seeds
+• Carrot Seed - 120 pcs
+• Tomato Seed - 89 pcs
+⏱️ Refresh in: 02h 30m
+⏱️ Refreshes at: 06:00 PM
 
-        try {
-            // Fetch current weather data
-            const weatherResponse = await fetch(`${BASE_URL}/api/weather`);
-            const weather = await weatherResponse.json();
+📦 Tools
+• Watering Can - 34 pcs
+• Hoe - 12 pcs
+⏱️ Refresh in: 04h 12m
+⏱️ Refreshes at: 08:00 PM
 
-            // Construct the response message
-            const message = `
-                🌤️ Current Weather: ${weather.currentWeather}
-                ${weather.icon} ${weather.effectDescription}
-                Crop Bonuses: ${weather.cropBonuses}
-                Rarity: ${weather.rarity}
-                Last Updated: ${new Date(weather.last_updated).toLocaleString()}
-            `;
-
-            // Send the weather information
-            api.sendMessage(message, event.threadID, event.messageID);
-        } catch (error) {
-            console.error("❌ Error fetching weather data:", error);
-            api.sendMessage("❌ Failed to retrieve weather data.", event.threadID, event.messageID);
-        }
-    },
-};
+📦 Fertilizers
+No items in stock.
+⏱️ Refresh in: 01h 45m
+⏱️ Refreshes at: 05:00 PM
