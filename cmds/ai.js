@@ -1,59 +1,38 @@
-const axios = require('axios');
-const fs = require('fs');
-const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+const axios = require("axios");
 
 module.exports = {
-    name: 'pluto',
-    description: 'Ask an AI question with GROK-2',
+    name: "ai",
+    usePrefix: false,
+    usage: "ai <your question>",
+    version: "1.2",
+    admin: false,
+    cooldown: 2,
 
-    async execute(api, event, args) {
-        const question = args.join(' ');
-
-        if (!question) {
-            return api.sendMessage(
-                `❓ Please enter a question.\n📌 Usage: ${config.prefix}ai <your question>`,
-                event.threadID,
-                event.messageID
-            );
-        }
-
-        await api.sendMessage("🤖 Thinking... Fetching response from GROK-2.", event.threadID, event.messageID);
-
+    execute: async ({ api, event, args }) => {
         try {
-            const response = await axios.get(`https://ajiro.gleeze.com/api/ai`, {
-                params: {
-                    model: 'grok-2',
-                    system: 'You are a LLM called groq invented by elon musk',
-                    question: question
-                }
-            });
+            const { threadID } = event;
+            const question = args.join(" ");
 
-            if (response.data.success && response.data.response) {
-                const formattedReply = 
-`🧠  GROK-2 AI RESPONSE
-━━━━━━━━━━━━━━━━━━━━━━
-📥 Question:
-"${question}"
-
-💬 Answer:
-${response.data.response}`;
-
-                return api.sendMessage(formattedReply, event.threadID, event.messageID);
-            } else {
-                return api.sendMessage(
-                    "⚠️ GROK-2 couldn't process your request. Please try again shortly.",
-                    event.threadID,
-                    event.messageID
-                );
+            if (!question) {
+                return api.sendMessage("❓ Please enter a question.\nUsage: ai <your question>", threadID);
             }
 
+            const loadingMsg = await api.sendMessage("🤖 GROK-2 is thinking...", threadID);
+
+            const apiUrl = `https://ajiro.gleeze.com/api/ai?model=grok-2&system=You are a LLM called groq invented by elon musk&question=${encodeURIComponent(question)}`;
+
+            const response = await axios.get(apiUrl);
+            const result = response?.data?.response;
+
+            if (response?.data?.success && result) {
+                const reply = `🧠 GROK-2 AI\n━━━━━━━━━━━━━━━━\n📥 Question: ${question}\n\n💬 Answer:\n${result}\n━━━━━━━━━━━━━━━━`;
+                return api.sendMessage(reply, threadID, loadingMsg.messageID);
+            }
+
+            return api.sendMessage("⚠️ GROK-2 couldn't process your request. Try again later.", threadID, loadingMsg.messageID);
         } catch (error) {
-            console.error("❌ AI command error:", error.message || error);
-            return api.sendMessage(
-                "❌ Something went wrong while connecting to GROK-2. Please try again later.",
-                event.threadID,
-                event.messageID
-            );
+            console.error("❌ GROK-2 Error:", error);
+            return api.sendMessage("❌ An error occurred while contacting GROK-2 API.", event.threadID);
         }
     }
 };
