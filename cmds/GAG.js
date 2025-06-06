@@ -35,27 +35,25 @@ module.exports = {
             weatherText += `Mutations: ${weather.mutations.length > 0 ? weather.mutations.join(", ") : "None"}\n`;
 
             // Format stock section
-let stockText = `\n🛒 STOCK\n━━━━━━━━━━━━━━\n`;
-for (const categoryKey in stock) {
-    const category = stock[categoryKey];
-    stockText += `\n📦 ${category.name}\n`;
-    const items = category.items || [];
-    if (items.length === 0) {
-        stockText += "No items in stock.\n";
-    } else {
-        for (const item of items) {
-            const quantity = item.quantity ?? "N/A";
-            stockText += `• ${item.name} - ${quantity} pcs\n`;
-        }
-    }
+            let stockText = `\n🛒 STOCK\n━━━━━━━━━━━━━━\n`;
+            for (const categoryKey in stock) {
+                const category = stock[categoryKey];
+                stockText += `\n📦 ${category.name}\n`;
+                const items = category.items || [];
 
-    if (category.countdown && category.countdown.formatted) {
-        stockText += `⏱️ Refresh in: ${category.countdown.formatted}\n`;
-    }
-}
+                if (items.length === 0) {
+                    stockText += "No items in stock.\n";
+                } else {
+                    for (const item of items) {
+                        const quantity = item.quantity ?? "N/A";
+                        stockText += `• ${item.name} - ${quantity} pcs\n`;
+                    }
+                }
 
+                if (category.countdown && category.countdown.formatted) {
+                    stockText += `⏱️ Refresh in: ${category.countdown.formatted}\n`;
+                }
 
-                // Optionally show countdown if exists
                 if (category.countdown && category.countdown.ends_at) {
                     const endsAt = new Date(category.countdown.ends_at);
                     stockText += `⏱️ Refreshes at: ${endsAt.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' })}\n`;
