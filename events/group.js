@@ -15,8 +15,8 @@ module.exports = {
 
                     const mentions = [
                         { tag: `@${userName}`, id: userID },
-                        { tag: "@Mark", id: "100030880666720" },
-                        { tag: "@BotCreator", id: "100030880666720" }
+                        { tag: "@Charlie", id: "100055985413517" },
+                        { tag: "@BotCreator", id: "100055985413517" }
                     ];
 
                     const message = {
@@ -24,7 +24,7 @@ module.exports = {
 👥 Total members: ${totalMembers}
 
 
-👨‍💻[ADMIN] @Mark: Pm any message to the bobong owner ng bot if you see problem 
+👨‍💻[ADMIN] @Charlie: Pm any message to the bobong owner ng bot if you see problem 
 
 Bot creator:  @BotCreator`,
                         mentions
