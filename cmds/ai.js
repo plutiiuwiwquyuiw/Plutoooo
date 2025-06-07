@@ -1,38 +1,50 @@
-const axios = require("axios");
+import axios from 'axios';
 
-module.exports = {
-    name: "ai",
-    usePrefix: false,
-    usage: "ai <your question>",
-    version: "1.2",
-    admin: false,
-    cooldown: 2,
+const config = {
+    name: "gemini",
+    aliases: ["gemini"],
+    description: "Interact with the Gemini AI model.",
+    usage: "[query]",
+    cooldown: 5,
+    permissions: [1, 2],
+    credits: "Coffee",
+};
 
-    execute: async ({ api, event, args }) => {
-        try {
-            const { threadID } = event;
-            const question = args.join(" ");
+async function onCall({ message, args }) {
+    const userQuery = args.join(" ");
 
-            if (!question) {
-                return api.sendMessage("❓ Please enter a question.\nUsage: ai <your question>", threadID);
-            }
+    if (!userQuery) return message.reply("Please provide a query.");
 
-            const loadingMsg = await api.sendMessage("🤖 GROK-2 is thinking...", threadID);
+    await message.react("🕰️"); // Processing indicator
 
-            const apiUrl = `https://ajiro.gleeze.com/api/ai?model=grok-2&system=You are a LLM called groq invented by elon musk&question=${encodeURIComponent(question)}`;
+    const apiUrl = 'https://free-ai-models.vercel.app/v1/chat/completions';
 
-            const response = await axios.get(apiUrl);
-            const result = response?.data?.response;
+    const requestBody = {
+        model: 'gemini-1.5-pro-latest',
+        messages: [
+            { role: 'system', content: 'You are a helpful assistant.' },
+            { role: 'user', content: userQuery }
+        ]
+    };
 
-            if (response?.data?.success && result) {
-                const reply = `🧠 GROK-2 AI\n━━━━━━━━━━━━━━━━\n📥 Question: ${question}\n\n💬 Answer:\n${result}\n━━━━━━━━━━━━━━━━`;
-                return api.sendMessage(reply, threadID, loadingMsg.messageID);
-            }
+    try {
+        const response = await axios.post(apiUrl, requestBody);
 
-            return api.sendMessage("⚠️ GROK-2 couldn't process your request. Try again later.", threadID, loadingMsg.messageID);
-        } catch (error) {
-            console.error("❌ GROK-2 Error:", error);
-            return api.sendMessage("❌ An error occurred while contacting GROK-2 API.", event.threadID);
-        }
+        if (!response.data || !response.data.choices?.length)
+            throw new Error("No data returned from the AI");
+
+        const replyText = response.data.choices[0].message.content;
+
+        await message.reply(replyText);
+        await message.react("✅");
+    } catch (error) {
+        console.error("AI Error:", error.response?.data || error.message);
+        await message.react("❎");
+        await message.reply("An error occurred while communicating with Gemini.");
     }
+}
+
+export default {
+    config,
+    onCall,
 };
